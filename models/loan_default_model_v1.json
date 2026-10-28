@@ -1,0 +1,44 @@
+{
+    "version": 1,
+    "trained_on": "2026-10-28T08:41:00.589802+00:00",
+    "sklearn_version": "1.7.2",
+    "features": [
+        "applicant_age",
+        "employment_status",
+        "annual_income",
+        "credit_score",
+        "loan_amount",
+        "loan_term_months",
+        "interest_rate",
+        "debt_to_income_pct",
+        "home_ownership",
+        "previous_defaults"
+    ],
+    "operating_threshold": 0.24523310312331778,
+    "threshold_policy": {
+        "name": "maximum_manual_review_capacity",
+        "description": "Select the lowest feasible probability threshold on validation data such that no more than 30% of applications are flagged for manual review.",
+        "max_flagged_rate": 0.3,
+        "selection_dataset": "validation",
+        "selection_method": "validation_score_ranking",
+        "positive_class": 1,
+        "decision_rule": "Flag when predicted default probability is greater than or equal to operating_threshold."
+    },
+    "validation_metrics": {
+        "flagged_rate": 0.3,
+        "precision": 0.47,
+        "recall": 0.7007952286282306,
+        "accuracy": 0.7808,
+        "sample_count": 5000
+    },
+    "final_test_metrics": {
+        "flagged_rate": 0.2848,
+        "precision": 0.4964887640449438,
+        "recall": 0.7027833001988072,
+        "accuracy": 0.7968,
+        "sample_count": 5000
+    },
+    "model_type": "LogisticRegression",
+    "random_state": 42,
+    "training_notes": "Pipeline refitted on all development rows after threshold selection. Final test evaluated once. No retuning performed after final-test evaluation."
+}

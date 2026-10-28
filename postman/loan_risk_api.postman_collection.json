@@ -1,0 +1,211 @@
+{
+  "info": {
+    "name": "Loan Risk API — Automated Tests",
+    "description": "Collection Runner checks for Loan Default Prediction API, using synthetic applicant data. Start the Docker container on localhost:8000 before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 — Health ready",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Health response confirms model readiness\", () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql(\"ok\");",
+              "  pm.expect(body.model_loaded).to.eql(true);",
+              "  pm.expect(body.model_version).to.be.a(\"string\");",
+              "  pm.expect(body.operating_threshold).to.be.a(\"number\").and.above(0).and.below(1);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Synthetic test data only; no client records."
+      },
+      "response": []
+    },
+    {
+      "name": "02 — Predict one applicant",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Single prediction has required fields\", () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.request_id).to.be.a(\"string\").and.not.empty;",
+              "  pm.expect(body.default_prediction).to.be.oneOf([\"high-risk\", \"low-risk\"]);",
+              "  pm.expect(body.default_probability).to.be.a(\"number\").within(0, 1);",
+              "  pm.expect(body.model_version).to.be.a(\"string\").and.not.empty;",
+              "  pm.expect(body.threshold_used).to.be.a(\"number\").above(0).and.below(1);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/predict",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "predict"
+          ]
+        },
+        "description": "Synthetic test data only; no client records.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicant_age\": 35,\n  \"employment_status\": \"employed\",\n  \"annual_income\": 65000,\n  \"credit_score\": 720,\n  \"loan_amount\": 15000,\n  \"loan_term_months\": 36,\n  \"interest_rate\": 8.5,\n  \"debt_to_income_pct\": 25.0,\n  \"home_ownership\": \"rent\",\n  \"previous_defaults\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 — Predict batch (2 applicants)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Batch response contains two ordered predictions\", () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.request_id).to.be.a(\"string\").and.not.empty;",
+              "  pm.expect(body.count).to.eql(2);",
+              "  pm.expect(body.model_version).to.be.a(\"string\").and.not.empty;",
+              "  pm.expect(body.threshold_used).to.be.a(\"number\").above(0).and.below(1);",
+              "  pm.expect(body.predictions).to.be.an(\"array\").with.lengthOf(2);",
+              "  body.predictions.forEach((prediction) => {",
+              "    pm.expect(prediction.default_prediction).to.be.oneOf([\"high-risk\", \"low-risk\"]);",
+              "    pm.expect(prediction.default_probability).to.be.a(\"number\").within(0, 1);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/predict/batch",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "predict",
+            "batch"
+          ]
+        },
+        "description": "Synthetic test data only; no client records.",
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"applicant_age\": 35,\n    \"employment_status\": \"employed\",\n    \"annual_income\": 65000,\n    \"credit_score\": 720,\n    \"loan_amount\": 15000,\n    \"loan_term_months\": 36,\n    \"interest_rate\": 8.5,\n    \"debt_to_income_pct\": 25.0,\n    \"home_ownership\": \"rent\",\n    \"previous_defaults\": 0\n  },\n  {\n    \"applicant_age\": 49,\n    \"employment_status\": \"employed\",\n    \"annual_income\": 42000,\n    \"credit_score\": null,\n    \"loan_amount\": 22000,\n    \"loan_term_months\": 36,\n    \"interest_rate\": 8.5,\n    \"debt_to_income_pct\": 25.0,\n    \"home_ownership\": \"rent\",\n    \"previous_defaults\": 1\n  }\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 — Reject null annual_income",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+              "pm.test(\"Null annual_income is rejected with field-level error\", () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.detail).to.be.an(\"array\").that.is.not.empty;",
+              "  pm.expect(body.detail.some((error) => Array.isArray(error.loc) && error.loc.includes(\"annual_income\"))).to.eql(true);",
+              "  pm.expect(body).not.to.have.property(\"default_prediction\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/predict",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "predict"
+          ]
+        },
+        "description": "Synthetic test data only; no client records.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"applicant_age\": 35,\n  \"employment_status\": \"employed\",\n  \"annual_income\": null,\n  \"credit_score\": 720,\n  \"loan_amount\": 15000,\n  \"loan_term_months\": 36,\n  \"interest_rate\": 8.5,\n  \"debt_to_income_pct\": 25.0,\n  \"home_ownership\": \"rent\",\n  \"previous_defaults\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}
